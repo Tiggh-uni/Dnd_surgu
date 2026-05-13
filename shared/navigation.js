@@ -3,8 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const navHtml = `
         <nav class="top-nav">
             <a href="../index.html">🏠 Главная</a>
-            <a href="quests.html">🎲 Генератор квестов</a>
-            <a href="initiative.html"> Генератор инициативы</a>
+            <a href="../generators/quests.html">🎲 Генератор квестов</a>
+            <a href="../generators/initiative.html"> Генератор инициативы</a>
         </nav>
     `;
     const navPlaceholder = document.getElementById('nav-placeholder');
