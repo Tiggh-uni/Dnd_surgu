@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DnD Трекер Инициативы</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #a0a0a0;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .current-turn {
+            background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 2px solid #feca57;
+            transition: all 0.3s ease;
+        }
+
+        .current-turn.active-ally {
+            border-color: #00b894;
+            box-shadow: 0 0 20px rgba(0, 184, 148, 0.3);
+        }
+
+        .current-turn.active-enemy {
+            border-color: #d63031;
+            box-shadow: 0 0 20px rgba(214, 48, 49, 0.3);
+        }
+
+        .current-turn-label {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #a0a0a0;
+            margin-bottom: 5px;
+        }
+
+        .current-turn-name {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .current-turn-type {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .type-ally {
+            background: #00b894;
+            color: white;
+        }
+
+        .type-enemy {
+            background: #d63031;
+            color: white;
+        }
+
+        .add-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .add-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .add-card h3 {
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .add-card.ally h3 {
+            color: #00b894;
+        }
+
+        .add-card.enemy h3 {
+            color: #d63031;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 1em;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #feca57;
+            box-shadow: 0 0 10px rgba(254, 202, 87, 0.2);
+        }
+
+        input::placeholder {
+            color: #636e72;
+        }
+
+        button {
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-ally {
+            background: #00b894;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-enemy {
+            background: #d63031;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-next {
+            background: linear-gradient(45deg, #feca57, #ff9ff3);
+            color: #1a1a2e;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            border-radius: 15px;
+        }
+
+        .btn-reset {
+            background: transparent;
+            border: 2px solid #636e72;
+            color: #636e72;
+            width: 100%;
+            padding: 12px;
+        }
+
+        .btn-reset:hover {
+            border-color: #d63031;
+            color: #d63031;
+        }
+
+        .initiative-list {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .initiative-list h3 {
+            margin-bottom: 15px;
+            color: #a0a0a0;
+            font-size: 1em;
+        }
+
+        .initiative-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.3s ease;
+        }
+
+        .initiative-item.current {
+            background: rgba(254, 202, 87, 0.2);
+            border: 1px solid #feca57;
+            font-weight: bold;
+        }
+
+        .initiative-item .name {
+            flex: 1;
+        }
+
+        .initiative-item .initiative {
+            font-weight: bold;
+            color: #feca57;
+            margin-right: 15px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .badge-ally {
+            background: rgba(0, 184, 148, 0.2);
+            color: #00b894;
+        }
+
+        .badge-enemy {
+            background: rgba(214, 48, 49, 0.2);
+            color: #d63031;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #636e72;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        .round-counter {
+            text-align: center;
+            color: #a0a0a0;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .round-counter span {
+            color: #feca57;
+            font-weight: bold;
+        }
+
+        @media (max-width: 500px) {
+            .add-section {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .current-turn-name {
+                font-size: 1.5em;
+            }
+
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚔️ DnD Инициатива</h1>
+        <p class="subtitle">Трекер порядка ходов</p>
+
+        <div class="current-turn" id="currentTurnCard">
+            <div class="current-turn-label">Сейчас ходит</div>
+            <div class="current-turn-name" id="currentTurnName">—</div>
+            <div class="current-turn-type" id="currentTurnType">Ожидание</div>
+        </div>
+
+        <div class="round-counter" id="roundCounter">
+            Раунд: <span>1</span>
+        </div>
+
+        <div class="add-section">
+            <div class="add-card ally">
+                <h3>🛡️ Союзник</h3>
+                <div class="input-group">
+                    <input type="text" id="allyName" placeholder="Имя персонажа" maxlength="30">
+                </div>
+                <div class="input-group">
+                    <input type="number" id="allyInitiative" placeholder="Инициатива" min="1" max="99">
+                </div>
+                <button class="btn-ally" onclick="addCombatant('ally')">Добавить союзника</button>
+            </div>
+
+            <div class="add-card enemy">
+                <h3>💀 Противник</h3>
+                <div class="input-group">
+                    <input type="text" id="enemyName" placeholder="Имя врага" maxlength="30">
+                </div>
+                <div class="input-group">
+                    <input type="number" id="enemyInitiative" placeholder="Инициатива" min="1" max="99">
+                </div>
+                <button class="btn-enemy" onclick="addCombatant('enemy')">Добавить врага</button>
+            </div>
+        </div>
+
+        <button class="btn-next" onclick="nextTurn()">
+            ▶ Следующий ход
+        </button>
+
+        <button class="btn-reset" onclick="resetAll()">
+            🔄 Сбросить всё
+        </button>
+
+        <div class="initiative-list" id="initiativeList">
+            <h3>📋 Порядок инициативы (от большей к меньшей)</h3>
+            <div id="initiativeItems">
+                <div class="empty-state">Нет участников. Добавьте союзников и врагов.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Хранилище данных
+        let combatants = [];
+        let currentTurnIndex = -1; // Индекс в ОТСОРТИРОВАННОМ массиве
+        let roundNumber = 1;
+
+        // Функция для получения отсортированного массива (всегда от большего к меньшему)
+        function getSortedCombatants() {
+            return [...combatants].sort((a, b) => b.initiative - a.initiative);
+        }
+
+        // Функция для отображения текущего хода
+        function updateCurrentTurnDisplay() {
+            const nameElement = document.getElementById('currentTurnName');
+            const typeElement = document.getElementById('currentTurnType');
+            const cardElement = document.getElementById('currentTurnCard');
+            const roundElement = document.getElementById('roundCounter').querySelector('span');
+
+            roundElement.textContent = roundNumber;
+
+            cardElement.classList.remove('active-ally', 'active-enemy');
+
+            if (currentTurnIndex >= 0 && combatants.length > 0) {
+                const sortedCombatants = getSortedCombatants();
+                if (currentTurnIndex < sortedCombatants.length) {
+                    const current = sortedCombatants[currentTurnIndex];
+                    nameElement.textContent = current.name;
+                    typeElement.textContent = current.type === 'ally' ? 'Союзник' : 'Противник';
+                    typeElement.className = 'current-turn-type ' + (current.type === 'ally' ? 'type-ally' : 'type-enemy');
+                    cardElement.classList.add(current.type === 'ally' ? 'active-ally' : 'active-enemy');
+                }
+            } else {
+                nameElement.textContent = '—';
+                typeElement.textContent = 'Ожидание';
+                typeElement.className = 'current-turn-type';
+            }
+        }
+
+        // Функция для отображения списка инициативы
+        function renderInitiativeList() {
+            const container = document.getElementById('initiativeItems');
+            
+            if (combatants.length === 0) {
+                container.innerHTML = '<div class="empty-state">Нет участников. Добавьте союзников и врагов.</div>';
+                return;
+            }
+
+            // Сортируем по инициативе (по убыванию)
+            const sortedCombatants = getSortedCombatants();
+
+            container.innerHTML = sortedCombatants.map((combatant, index) => {
+                const isCurrent = index === currentTurnIndex;
+                
+                return `
+                    <div class="initiative-item ${isCurrent ? 'current' : ''}">
+                        <span class="badge ${combatant.type === 'ally' ? 'badge-ally' : 'badge-enemy'}">
+                            ${combatant.type === 'ally' ? '🛡️' : '💀'}
+                        </span>
+                        <span class="name">${combatant.name}</span>
+                        <span class="initiative">🎲 ${combatant.initiative}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Функция добавления участника
+        function addCombatant(type) {
+            const nameInput = document.getElementById(type === 'ally' ? 'allyName' : 'enemyName');
+            const initiativeInput = document.getElementById(type === 'ally' ? 'allyInitiative' : 'enemyInitiative');
+            
+            const name = nameInput.value.trim();
+            const initiative = parseInt(initiativeInput.value);
+
+            // Валидация
+            if (!name) {
+                alert('Введите имя персонажа!');
+                nameInput.focus();
+                return;
+            }
+
+            if (!initiative || initiative < 1) {
+                alert('Введите корректное значение инициативы (от 1 до 99)!');
+                initiativeInput.focus();
+                return;
+            }
+
+            if (initiative > 99) {
+                alert('Значение инициативы не может превышать 99!');
+                initiativeInput.focus();
+                return;
+            }
+
+            // Проверка на уникальность имени
+            if (combatants.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+                alert('Участник с таким именем уже существует!');
+                nameInput.focus();
+                return;
+            }
+
+            // Добавляем участника
+            combatants.push({
+                name: name,
+                initiative: initiative,
+                type: type
+            });
+
+            // Если это первый участник, делаем его текущим
+            if (combatants.length === 1) {
+                currentTurnIndex = 0;
+            } else {
+                // Если уже есть участники, обновляем индекс текущего хода
+                // в соответствии с новой сортировкой
+                if (currentTurnIndex >= 0) {
+                    const sortedCombatants = getSortedCombatants();
+                    // Находим новый индекс текущего участника в отсортированном массиве
+                    const currentCombatant = sortedCombatants[currentTurnIndex];
+                    if (currentCombatant) {
+                        const newSortedCombatants = getSortedCombatants();
+                        currentTurnIndex = newSortedCombatants.findIndex(
+                            c => c.name === currentCombatant.name && c.initiative === currentCombatant.initiative && c.type === currentCombatant.type
+                        );
+                        if (currentTurnIndex === -1) currentTurnIndex = 0;
+                    }
+                }
+            }
+
+            // Очищаем поля ввода
+            nameInput.value = '';
+            initiativeInput.value = '';
+            nameInput.focus();
+
+            // Обновляем отображение
+            updateCurrentTurnDisplay();
+            renderInitiativeList();
+        }
+
+        // Функция следующего хода
+        function nextTurn() {
+            if (combatants.length === 0) {
+                alert('Нет участников битвы! Добавьте хотя бы одного союзника или врага.');
+                return;
+            }
+
+            const sortedCombatants = getSortedCombatants();
+
+            // Переходим к следующему участнику в отсортированном порядке
+            if (currentTurnIndex < sortedCombatants.length - 1) {
+                currentTurnIndex++;
+            } else {
+                // Начинаем новый раунд
+                currentTurnIndex = 0;
+                roundNumber++;
+            }
+
+            updateCurrentTurnDisplay();
+            renderInitiativeList();
+        }
+
+        // Функция полного сброса
+        function resetAll() {
+            if (combatants.length > 0) {
+                if (confirm('Вы уверены, что хотите сбросить всё? Все данные будут удалены.')) {
+                    combatants = [];
+                    currentTurnIndex = -1;
+                    roundNumber = 1;
+                    updateCurrentTurnDisplay();
+                    renderInitiativeList();
+                }
+            } else {
+                combatants = [];
+                currentTurnIndex = -1;
+                roundNumber = 1;
+                updateCurrentTurnDisplay();
+                renderInitiativeList();
+            }
+        }
+
+        // Добавляем обработку клавиши Enter для полей ввода
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const allyName = document.getElementById('allyName');
+                const enemyName = document.getElementById('enemyName');
+                
+                if (document.activeElement === allyName || document.activeElement === document.getElementById('allyInitiative')) {
+                    addCombatant('ally');
+                } else if (document.activeElement === enemyName || document.activeElement === document.getElementById('enemyInitiative')) {
+                    addCombatant('enemy');
+                }
+            }
+        });
+
+        // Инициализация
+        updateCurrentTurnDisplay();
+        renderInitiativeList();
+    </script>
+</body>
+</html>
