@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <nav class="top-nav">
             <a href="../">🏠 Главная</a>
             <a href="Квесты.html">🎲 Генератор квестов</a>
+            <a href="Инициатива.html"> Генератор инициативы</a>
         </nav>
     `;
     const navPlaceholder = document.getElementById('nav-placeholder');
